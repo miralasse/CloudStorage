@@ -1,0 +1,71 @@
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.control.TextField?>
+
+
+<?import javafx.scene.control.Label?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.PasswordField?>
+
+<?import javafx.scene.image.ImageView?>
+<?import javafx.scene.image.Image?>
+<VBox fx:controller="com.cloud.client.LoginController"
+      fx:id="globParent"
+      alignment="center"
+      xmlns:fx="http://javafx.com/fxml">
+
+      <!-- style="-fx-background-image: url(vector-cloud.png);" -->
+
+     <ImageView fitHeight="83.0" fitWidth="128.0">
+        <image>
+            <Image url="@transparent-cloud.png"/>
+        </image>
+         <VBox.margin>
+             <Insets bottom="20.0"/>
+         </VBox.margin>
+    </ImageView>
+
+    <HBox alignment="CENTER">
+        <VBox.margin>
+            <Insets bottom="10.0"/>
+        </VBox.margin>
+
+        <Label text="Username:">
+            <HBox.margin>
+                <Insets right="20.0"/>
+            </HBox.margin>
+        </Label>
+
+        <TextField fx:id="loginField"
+                   maxWidth="300"
+                   promptText="Login"/>
+    </HBox>
+
+    <HBox alignment="CENTER">
+        <VBox.margin>
+            <Insets bottom="10.0"/>
+        </VBox.margin>
+
+        <Label text="Password:">
+            <HBox.margin>
+                <Insets right="23.0"/>
+            </HBox.margin>
+        </Label>
+        <PasswordField fx:id="passwordField"
+                       maxWidth="300"
+                       promptText="Password"/>
+    </HBox>
+
+    <Button onAction="#sendAuthMsg"
+            prefWidth="100"
+            text="Log In">
+            <!--style="-fx-background-color: linear-gradient(#efd100 0, #e2a233 38%, #f0c328 60%, #fff1a3 86%, #ffe13e 100%);"> -->
+        <opaqueInsets>
+            <Insets/>
+        </opaqueInsets>
+        <VBox.margin>
+            <Insets top="10.0"/>
+        </VBox.margin>
+    </Button>
+</VBox>
