@@ -28,10 +28,14 @@ public class AuthHandler extends ChannelInboundHandlerAdapter {
                 if (login.equals("elena") && password.equals("111")) {
                     authorized = true;
                     System.out.println("Client authorized successfully");
-                    CmdMessage authOkMsg = new CmdMessage("AuthOk");
+                    CmdMessage authOkMsg = new CmdMessage(CmdMessage.Command.AUTH_CONFIRM);
                     ctx.writeAndFlush(authOkMsg);
                     ctx.pipeline().remove(this.getClass());
                     ctx.pipeline().addLast(new ServerHandler());
+                } else {
+                    System.out.println("Client authorization data is incorrect");
+                    CmdMessage authWrongMsg = new CmdMessage(CmdMessage.Command.AUTH_WRONG);
+                    ctx.writeAndFlush(authWrongMsg);
                 }
             } else {
                 System.out.println("Not an AuthMessage received");

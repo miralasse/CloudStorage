@@ -24,8 +24,8 @@ public class ServerHandler extends ChannelInboundHandlerAdapter {
                 return;
             System.out.println(msg.getClass());
             if (msg instanceof CmdMessage) {
-                System.out.println("Client's command: " + ((CmdMessage) msg).getText());
-                CmdMessage answer = new CmdMessage("Hello Client! Your command has been received");
+                System.out.println("Client's command: " + ((CmdMessage) msg).getCommand());
+                CmdMessage answer = new CmdMessage(CmdMessage.Command.DELETE_FILE_CONFIRM);
                 ctx.write(answer);
             } else if (msg instanceof FileMessage) {
                 String fileName = "new" + ((FileMessage) msg).getFileName();

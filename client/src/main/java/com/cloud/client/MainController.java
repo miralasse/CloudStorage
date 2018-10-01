@@ -31,11 +31,11 @@ public class MainController {
 
     public void testCmd(ActionEvent actionEvent) {
         try {
-            CmdMessage cmdMessage = new CmdMessage("Hello Server!!!");
+            CmdMessage cmdMessage = new CmdMessage(CmdMessage.Command.DELETE_FILE, "newtestFile");
             Network.sendMessage(cmdMessage);
 
             CmdMessage msgFromServer = (CmdMessage) Network.receiveMessage();
-            System.out.println("Answer from server: " + msgFromServer.getText());
+            System.out.println("Answer from server: " + msgFromServer.getCommand());
         } catch (Exception e) {
             e.printStackTrace();
         }

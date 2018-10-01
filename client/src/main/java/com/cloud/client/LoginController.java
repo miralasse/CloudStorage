@@ -44,15 +44,17 @@ public class LoginController {
         AuthMessage authMessage = new AuthMessage(loginField.getText(), passwordField.getText());
         Network.sendMessage(authMessage);
         CmdMessage msgFromServer = (CmdMessage) Network.receiveMessage();
-        if (msgFromServer.getText().equals("AuthOk")) {
-            System.out.println("Answer from server: " + msgFromServer.getText());
+        if (msgFromServer.getCommand() == CmdMessage.Command.AUTH_CONFIRM) {
+            System.out.println("Answer from server: " + msgFromServer.getCommand());
             try {
                 auth();
             } catch (IOException e) {
                 e.printStackTrace();
             }
-        } else {
+        } else if (msgFromServer.getCommand() == CmdMessage.Command.AUTH_WRONG){
             showAlert("Неверный логин/пароль");
+        } else {
+            showAlert("Произошла ошибка при авторизации");
         }
     }
 

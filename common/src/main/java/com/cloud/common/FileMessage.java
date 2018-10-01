@@ -5,8 +5,6 @@ public class FileMessage extends Message {
     private long fileSize;
     private byte[] content;
 
-
-
     public String getFileName() {
         return fileName;
     }
