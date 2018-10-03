@@ -31,7 +31,7 @@ public class LoginController {
         Stage primaryStage = new Stage();
         Parent root = FXMLLoader.load(getClass().getResource("/main_screen.fxml"));
         primaryStage.setTitle("Cloud Client");
-        primaryStage.setScene(new Scene(root, 600, 400));
+        primaryStage.setScene(new Scene(root, 800, 400));
         primaryStage.show();
     }
 

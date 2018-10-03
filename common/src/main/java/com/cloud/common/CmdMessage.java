@@ -5,11 +5,13 @@ public class CmdMessage extends Message {
     public enum Command {
         AUTH_CONFIRM,
         AUTH_WRONG,
+        DOWNLOAD_FILE,
         RENAME_FILE,
         RENAME_FILE_CONFIRM,
         DELETE_FILE,
         DELETE_FILE_CONFIRM,
-        FILE_LIST
+        FILE_LIST,
+        FAILED
     }
 
     private Command command;

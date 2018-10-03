@@ -5,55 +5,73 @@
 <?import javafx.scene.control.TableColumn?>
 
 <?import javafx.scene.control.Label?>
+<?import javafx.scene.text.Font?>
+<?import javafx.scene.image.ImageView?>
+<?import javafx.scene.image.Image?>
 <VBox fx:controller="com.cloud.client.MainController"
       xmlns:fx="http://javafx.com/fxml" alignment="center">
 
+    <TableView fx:id="tableView" VBox.vgrow="ALWAYS">
+        <columnResizePolicy>
+            <TableView fx:constant="CONSTRAINED_RESIZE_POLICY"/>
+        </columnResizePolicy>
+        <placeholder>
+            <Label text="Your cloud storage is empty"/>
+        </placeholder>
+        <columns>
+            <TableColumn text="File" fx:id="fileNameColumn"/>
+            <TableColumn text="Size" fx:id="fileSizeColumn"/>
+        </columns>
+    </TableView>
+
     <HBox>
-        <VBox>
-            <TableView fx:id="localFiles">
-                <columnResizePolicy><TableView fx:constant="CONSTRAINED_RESIZE_POLICY"/></columnResizePolicy>
-                <placeholder>
-                    <Label text="Your local storage is empty"/>
-                </placeholder>
-                <columns>
-                    <TableColumn text="Local Storage" prefWidth="300">
-                        <columns>
-                            <TableColumn text="File" fx:id="localFileNameColumn" prefWidth="200"/>
-                            <TableColumn text="Size" fx:id="localFileSizeColumn" prefWidth="100"/>
-                        </columns>
-                    </TableColumn>
-                </columns>
-            </TableView>
+        <Button text="Upload file" HBox.hgrow="ALWAYS" maxWidth="Infinity" onAction="#uploadFile">
+            <graphic>
+                <ImageView fitHeight="50.0" fitWidth="50.0" pickOnBounds="true" preserveRatio="true">
+                    <image>
+                        <Image url="@upload.png" />
+                    </image>
+                </ImageView>
+            </graphic>
+        </Button>
 
-            <HBox>
-                <Button text="Upload file" HBox.hgrow="ALWAYS" maxWidth="Infinity" onAction="#testFileSend"/>
-                <Button text="Send Cmd" HBox.hgrow="ALWAYS" maxWidth="Infinity" onAction="#testCmd"/>
-                <Button text="Refresh" HBox.hgrow="ALWAYS" maxWidth="Infinity"/>
-            </HBox>
-        </VBox>
 
-        <VBox>
-            <TableView fx:id="cloudFiles">
-                <columnResizePolicy><TableView fx:constant="CONSTRAINED_RESIZE_POLICY"/></columnResizePolicy>
-                <placeholder>
-                    <Label text="Your cloud storage is empty"/>
-                </placeholder>
-                <columns>
-                    <TableColumn text="Cloud Storage" prefWidth="300">
-                        <columns>
-                            <TableColumn text="File" fx:id="cloudFileNameColumn" prefWidth="200"/>
-                            <TableColumn text="Size" fx:id="cloudFileSizeColumn" prefWidth="100"/>
-                        </columns>
-                    </TableColumn>
-                </columns>
-            </TableView>
-
-            <HBox>
-                <Button text="Download file" HBox.hgrow="ALWAYS" maxWidth="Infinity"/>
-                <Button text="Delete file" HBox.hgrow="ALWAYS" maxWidth="Infinity"/>
-                <Button text="Refresh" HBox.hgrow="ALWAYS" maxWidth="Infinity"/>
-            </HBox>
-        </VBox>
+        <Button text="Download file" HBox.hgrow="ALWAYS" maxWidth="Infinity" onAction="#downloadFile">
+            <graphic>
+                <ImageView fitHeight="50.0" fitWidth="50.0" pickOnBounds="true" preserveRatio="true">
+                    <image>
+                        <Image url="@download.png" />
+                    </image>
+                </ImageView>
+            </graphic>
+        </Button>
+        <Button text="Rename file" HBox.hgrow="ALWAYS" maxWidth="Infinity" onAction="#renameFile">
+            <graphic>
+                <ImageView fitHeight="50.0" fitWidth="50.0" pickOnBounds="true" preserveRatio="true">
+                    <image>
+                        <Image url="@rename.png" />
+                    </image>
+                </ImageView>
+            </graphic>
+        </Button>
+        <Button text="Delete file" HBox.hgrow="ALWAYS" maxWidth="Infinity" onAction="#deleteFile">
+            <graphic>
+                <ImageView fitHeight="50.0" fitWidth="50.0" pickOnBounds="true" preserveRatio="true">
+                    <image>
+                        <Image url="@delete.png" />
+                    </image>
+                </ImageView>
+            </graphic>
+        </Button>
+        <Button text="Refresh" HBox.hgrow="ALWAYS" maxWidth="Infinity" onAction="#refreshFileList">
+            <graphic>
+                <ImageView fitHeight="50.0" fitWidth="50.0" pickOnBounds="true" preserveRatio="true">
+                    <image>
+                        <Image url="@refresh.png" />
+                    </image>
+                </ImageView>
+            </graphic>
+        </Button>
     </HBox>
 
 </VBox>
