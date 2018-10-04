@@ -40,7 +40,8 @@ public class Server {
             System.out.println("Sever is running");
             ChannelFuture future = b.bind(PORT).sync();
             future.channel().closeFuture().sync();
-        } finally {
+        }
+        finally {
             mainGroup.shutdownGracefully();
             workerGroup.shutdownGracefully();
         }

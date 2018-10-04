@@ -16,7 +16,6 @@ public class AuthHandler extends ChannelInboundHandlerAdapter {
 
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
-        System.out.println("authorized = " + authorized);
         if (msg == null) {
             return;
         }
@@ -27,11 +26,11 @@ public class AuthHandler extends ChannelInboundHandlerAdapter {
                 String password = ((AuthMessage) msg).getPassword();
                 if (login.equals("elena") && password.equals("111")) {
                     authorized = true;
-                    System.out.println("Client authorized successfully");
+                    System.out.println("Client " + login + " authorized successfully");
                     CmdMessage authOkMsg = new CmdMessage(CmdMessage.Command.AUTH_CONFIRM);
                     ctx.writeAndFlush(authOkMsg);
                     ctx.pipeline().remove(this.getClass());
-                    ctx.pipeline().addLast(new ServerHandler());
+                    ctx.pipeline().addLast(new ServerHandler(login));
                 } else {
                     System.out.println("Client authorization data is incorrect");
                     CmdMessage authWrongMsg = new CmdMessage(CmdMessage.Command.AUTH_WRONG);

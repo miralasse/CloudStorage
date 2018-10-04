@@ -25,48 +25,35 @@ public class MainController {
         }
     }
 
-    public void downloadFile(ActionEvent actionEvent) {
-        try {
-            CmdMessage cmdMessage = new CmdMessage(CmdMessage.Command.DOWNLOAD_FILE, "newtestFile.txt");
-            Network.sendMessage(cmdMessage);
+    public void downloadFile() {
+        CmdMessage cmdMessage = new CmdMessage(CmdMessage.Command.DOWNLOAD_FILE_FROM_SERVER);
+        cmdMessage.getCommand().setFileName("newtestFile.txt");
+        Network.sendMessage(cmdMessage);
 
-            FileMessage fileFromServer = (FileMessage) Network.receiveMessage();
-            String fileName = "fromServer" + fileFromServer.getFileName();
-            Path filePath = Paths.get(fileName);
-            System.out.println("Received file: " + filePath.toString());
-            byte[] content = fileFromServer.getContent();
-            Files.write(filePath, content);
-            System.out.println("File is ready");
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+//            FileMessage fileFromServer = (FileMessage) Network.receiveMessage();
+//            String fileName = "fromServer" + fileFromServer.getFileName();
+//            Path filePath = Paths.get(fileName);
+//            System.out.println("Received file: " + filePath.toString());
+//            byte[] content = fileFromServer.getContent();
+//            Files.write(filePath, content);
+//            System.out.println("File is ready");
     }
 
     public void deleteFile() {
-        try {
-            CmdMessage cmdMessage = new CmdMessage(CmdMessage.Command.DELETE_FILE, "serverDeleteTest.txt");
-            Network.sendMessage(cmdMessage);
-
-            CmdMessage msgFromServer = (CmdMessage) Network.receiveMessage();
-            System.out.println("Answer from server: " + msgFromServer.getCommand());
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        CmdMessage cmdMessage = new CmdMessage(CmdMessage.Command.DELETE_FILE);
+        cmdMessage.getCommand().setFileName("deleteFile.txt");
+        Network.sendMessage(cmdMessage);
     }
 
     public void renameFile() {
-        try {
-            CmdMessage cmdMessage = new CmdMessage(CmdMessage.Command.RENAME_FILE, "newtestFile.txt");
-            Network.sendMessage(cmdMessage);
-
-            CmdMessage msgFromServer = (CmdMessage) Network.receiveMessage();
-            System.out.println("Answer from server: " + msgFromServer.getCommand());
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        CmdMessage cmdMessage = new CmdMessage(CmdMessage.Command.RENAME_FILE);
+        cmdMessage.getCommand().setFileName("renameFile.txt");
+        cmdMessage.getCommand().setNewFileName("newNameFile.txt");
+        Network.sendMessage(cmdMessage);
     }
 
-
-    public void refreshFileList(ActionEvent actionEvent) {
+    public void refreshFileList() {
+        CmdMessage cmdMessage = new CmdMessage(CmdMessage.Command.REFRESH_FILE_LIST);
+        Network.sendMessage(cmdMessage);
     }
 }
