@@ -17,10 +17,6 @@
         <placeholder>
             <Label text="Your cloud storage is empty"/>
         </placeholder>
-        <columns>
-            <TableColumn text="File" fx:id="fileNameColumn"/>
-            <TableColumn text="Size" fx:id="fileSizeColumn"/>
-        </columns>
     </TableView>
 
     <HBox>
@@ -44,7 +40,7 @@
             </graphic>
         </Button>
 
-        <Button text="Rename file" HBox.hgrow="ALWAYS" maxWidth="Infinity" onAction="#renameFile">
+        <Button text="Rename file" HBox.hgrow="ALWAYS" maxWidth="Infinity" onAction="#enterNewFileName">
             <graphic>
                 <ImageView fitHeight="50.0" fitWidth="50.0" pickOnBounds="true" preserveRatio="true">
                     <image>
@@ -64,7 +60,7 @@
             </graphic>
         </Button>
 
-        <Button text="Refresh" HBox.hgrow="ALWAYS" maxWidth="Infinity" onAction="#refreshFileList">
+        <Button text="Refresh" HBox.hgrow="ALWAYS" maxWidth="Infinity" onAction="#askForFileList">
             <graphic>
                 <ImageView fitHeight="50.0" fitWidth="50.0" pickOnBounds="true" preserveRatio="true">
                     <image>

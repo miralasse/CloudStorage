@@ -33,6 +33,8 @@ public class LoginController {
         primaryStage.setTitle("Cloud Client");
         primaryStage.setScene(new Scene(root, 800, 400));
         primaryStage.show();
+        StageHelper helper = StageHelper.getInstance();
+        helper.setStage(primaryStage);
     }
 
     public void sendAuthMsg() {
@@ -52,9 +54,12 @@ public class LoginController {
                 e.printStackTrace();
             }
         } else if (msgFromServer.getCommand() == CmdMessage.Command.AUTH_WRONG){
+            Network.disconnect();
             showAlert("Неверный логин/пароль");
         } else {
+            Network.disconnect();
             showAlert("Произошла ошибка при авторизации");
+
         }
     }
 

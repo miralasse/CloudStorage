@@ -1,15 +1,15 @@
 package com.cloud.common;
 
-import java.util.Map;
+import java.util.ArrayList;
 
 public class FileListMessage extends Message {
-    private Map<String, Long> files;
+    private ArrayList<FileInfo> fileList;
 
-    public Map<String, Long> getFiles() {
-        return files;
+    public ArrayList<FileInfo> getFileList() {
+        return fileList;
     }
 
-    public void setFiles(Map<String, Long> files) {
-        this.files = files;
+    public void setFileList(ArrayList<FileInfo> fileList) {
+        this.fileList = fileList;
     }
 }

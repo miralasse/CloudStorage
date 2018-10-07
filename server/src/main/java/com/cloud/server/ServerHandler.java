@@ -1,6 +1,7 @@
 package com.cloud.server;
 
 import com.cloud.common.CmdMessage;
+import com.cloud.common.FileInfo;
 import com.cloud.common.FileListMessage;
 import com.cloud.common.FileMessage;
 import io.netty.channel.ChannelHandlerContext;
@@ -10,12 +11,12 @@ import io.netty.util.ReferenceCountUtil;
 import java.io.IOException;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
-import java.util.Map;
-import java.util.TreeMap;
+import java.util.ArrayList;
+
 
 public class ServerHandler extends ChannelInboundHandlerAdapter {
     private Path clientDirectory;
-    private Map<String, Long> files = new TreeMap<>();
+    private ArrayList<FileInfo> fileList = new ArrayList<>();
 
     public ServerHandler(String login) {
         checkRepo(login);
@@ -44,6 +45,7 @@ public class ServerHandler extends ChannelInboundHandlerAdapter {
                             return;
                         ctx.write(getFile(fileToDownload));
                         ctx.flush();
+                        break;
 
                     case DELETE_FILE:
                         String fileToDelete = command.getFileName();
@@ -51,6 +53,7 @@ public class ServerHandler extends ChannelInboundHandlerAdapter {
                             return;
                         deleteFile(fileToDelete);
                         sendFileList(ctx);
+                        break;
 
                     case RENAME_FILE:
                         String oldFileName = command.getFileName();
@@ -59,9 +62,11 @@ public class ServerHandler extends ChannelInboundHandlerAdapter {
                             return;
                         renameFile(oldFileName, newFileName);
                         sendFileList(ctx);
+                        break;
 
                     case REFRESH_FILE_LIST:
                         sendFileList(ctx);
+                        break;
                 }
             } else if (msg instanceof FileMessage) {
                 saveFileToStorage((FileMessage) msg);
@@ -99,13 +104,13 @@ public class ServerHandler extends ChannelInboundHandlerAdapter {
     }
 
     private void getFileList() {
-        files.clear();
+        fileList.clear();
         try {
             Files.walkFileTree(clientDirectory, new SimpleFileVisitor<Path>() {
                 @Override
                 public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
                     System.out.println(file.getFileName().toString() + " " + file.toFile().length() + " байт");
-                    files.put(file.getFileName().toString(), file.toFile().length());
+                    fileList.add(new FileInfo(file.getFileName().toString(), file.toFile().length()));
                     return FileVisitResult.CONTINUE;
                 }
             });
@@ -118,7 +123,7 @@ public class ServerHandler extends ChannelInboundHandlerAdapter {
     private void sendFileList(ChannelHandlerContext ctx) {
         getFileList();
         FileListMessage listMessage = new FileListMessage();
-        listMessage.setFiles(files);
+        listMessage.setFileList(fileList);
         ctx.write(listMessage);
         ctx.flush();
     }
@@ -148,7 +153,7 @@ public class ServerHandler extends ChannelInboundHandlerAdapter {
     private void saveFileToStorage (FileMessage msg) {
         if (msg.getFileName() == null || msg.getContent() == null)
             return;
-        Path filePath = Paths.get("clientDirectory" + "/" + msg.getFileName());
+        Path filePath = Paths.get(clientDirectory + "/" + msg.getFileName());
         byte[] content = msg.getContent();
         try {
             Files.write(filePath, content, StandardOpenOption.CREATE_NEW);
@@ -161,7 +166,7 @@ public class ServerHandler extends ChannelInboundHandlerAdapter {
 
     private FileMessage getFile(String fileName) {
         FileMessage fileMessage = new FileMessage();
-        Path file = Paths.get("clientDirectory" + "/" + fileName);
+        Path file = Paths.get(clientDirectory + "/" + fileName);
         fileMessage.setFileName(file.getFileName().toString());
         fileMessage.setFileSize(file.toFile().length());
         try {
