@@ -1,7 +1,5 @@
 package com.cloud.common;
 
-import java.io.Serializable;
-
 public class CmdMessage extends Message {
 
     public enum Command {

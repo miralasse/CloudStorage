@@ -41,10 +41,10 @@ public class MainController implements Initializable {
         fileList = FXCollections.observableArrayList();
 
         TableColumn<FileInfo, String> tcFileName = new TableColumn<>("File");
-        tcFileName.setCellValueFactory(new PropertyValueFactory<>("file"));
+        tcFileName.setCellValueFactory(new PropertyValueFactory<>("fileName"));
 
         TableColumn<FileInfo, String> tcFileSize = new TableColumn<>("Size");
-        tcFileSize.setCellValueFactory(new PropertyValueFactory<>("size"));
+        tcFileSize.setCellValueFactory(new PropertyValueFactory<>("fileSize"));
 
         tableView.getColumns().addAll(tcFileName, tcFileSize);
         tableView.setItems(fileList);
