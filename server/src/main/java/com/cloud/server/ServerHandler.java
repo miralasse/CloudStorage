@@ -40,15 +40,17 @@ public class ServerHandler extends ChannelInboundHandlerAdapter {
                     return;
                 switch (command) {
                     case DOWNLOAD_FILE_FROM_SERVER:
-                        String fileToDownload = command.getFileName();
+                        String fileToDownload = ((CmdMessage) msg).getFileName();
+                        System.out.println(fileToDownload);
                         if (fileToDownload == null)
                             return;
                         ctx.write(getFile(fileToDownload));
                         ctx.flush();
+                        System.out.println("FileMessage sent");
                         break;
 
                     case DELETE_FILE:
-                        String fileToDelete = command.getFileName();
+                        String fileToDelete = ((CmdMessage) msg).getFileName();
                         if (fileToDelete == null)
                             return;
                         deleteFile(fileToDelete);
@@ -56,8 +58,8 @@ public class ServerHandler extends ChannelInboundHandlerAdapter {
                         break;
 
                     case RENAME_FILE:
-                        String oldFileName = command.getFileName();
-                        String newFileName = command.getNewFileName();
+                        String oldFileName = ((CmdMessage) msg).getFileName();
+                        String newFileName = ((CmdMessage) msg).getNewFileName();
                         if (oldFileName == null || newFileName == null)
                             return;
                         renameFile(oldFileName, newFileName);
@@ -118,20 +120,24 @@ public class ServerHandler extends ChannelInboundHandlerAdapter {
             System.out.println("Getting file list failed");
             e.printStackTrace();
         }
+        System.out.println("Список файлов обновлен. Содержимое списока: " + fileList);
     }
 
     private void sendFileList(ChannelHandlerContext ctx) {
         getFileList();
         FileListMessage listMessage = new FileListMessage();
         listMessage.setFileList(fileList);
+        System.out.println("Содержимое сообщения FileListMessage на сервере: " + listMessage.getFileList());
         ctx.write(listMessage);
         ctx.flush();
+        System.out.println("Список файлов отправлен");
     }
 
     private void deleteFile(String fileName) {
         Path pathToDelete = Paths.get(clientDirectory + "/" + fileName);
         try {
             Files.delete(pathToDelete);
+            System.out.println("Удален файл " + fileName);
         } catch (IOException e) {
             System.out.println("Deleting file failed");
             e.printStackTrace();
@@ -144,6 +150,7 @@ public class ServerHandler extends ChannelInboundHandlerAdapter {
         try {
             Files.move(sourcePath, destinationPath,
                     StandardCopyOption.REPLACE_EXISTING);
+            System.out.println("Переименован файл " + oldFileName + " в файл " + newFileName);
         } catch (IOException e) {
             System.out.println("Moving file failed");
             e.printStackTrace();
@@ -156,7 +163,7 @@ public class ServerHandler extends ChannelInboundHandlerAdapter {
         Path filePath = Paths.get(clientDirectory + "/" + msg.getFileName());
         byte[] content = msg.getContent();
         try {
-            Files.write(filePath, content, StandardOpenOption.CREATE_NEW);
+            Files.write(filePath, content);
             System.out.println("File " + filePath.toString() + " has been uploaded");
         } catch (IOException e) {
             System.out.println("Uploading file failed");

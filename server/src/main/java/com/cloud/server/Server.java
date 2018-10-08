@@ -15,6 +15,7 @@ import io.netty.handler.codec.serialization.ObjectEncoder;
 public class Server {
     private static final int PORT = 8189;
     private static final int MAX_OBJ_SIZE = 1024 * 1024 * 100; // 100 mb
+    private AuthService authService;
 
     public Server() {
     }
@@ -37,11 +38,14 @@ public class Server {
                     })
                     .option(ChannelOption.SO_BACKLOG, 128)
                     .childOption(ChannelOption.SO_KEEPALIVE, true);
+            authService = AuthService.getOurInstance();
+            authService.connect();
             System.out.println("Sever is running");
             ChannelFuture future = b.bind(PORT).sync();
             future.channel().closeFuture().sync();
         }
         finally {
+            authService.disconnect();
             mainGroup.shutdownGracefully();
             workerGroup.shutdownGracefully();
         }

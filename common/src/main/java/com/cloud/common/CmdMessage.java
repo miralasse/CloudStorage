@@ -1,5 +1,7 @@
 package com.cloud.common;
 
+import java.io.Serializable;
+
 public class CmdMessage extends Message {
 
     public enum Command {
@@ -9,39 +11,11 @@ public class CmdMessage extends Message {
         RENAME_FILE,
         DELETE_FILE,
         REFRESH_FILE_LIST;
-
-        Command() {}
-
-        Command(String fileName) {
-            this.fileName = fileName;
-        }
-
-        Command(String fileName, String newFileName) {
-            this.fileName = fileName;
-            this.newFileName = newFileName;
-        }
-
-        private String fileName;
-        private String newFileName;
-
-        public String getFileName() {
-            return fileName;
-        }
-
-        public void setFileName(String fileName) {
-            this.fileName = fileName;
-        }
-
-        public String getNewFileName() {
-            return newFileName;
-        }
-
-        public void setNewFileName(String newFileName) {
-            this.newFileName = newFileName;
-        }
     }
 
     private Command command;
+    private String fileName;
+    private String newFileName;
 
     public CmdMessage(Command command) {
         this.command = command;
@@ -53,5 +27,22 @@ public class CmdMessage extends Message {
 
     public void setCommand(Command command) {
         this.command = command;
+    }
+
+    public String getFileName() {
+        System.out.println("Вывод при вызове метода getFileName" + fileName);
+        return fileName;
+    }
+
+    public void setFileName(String fileName) {
+        this.fileName = fileName;
+    }
+
+    public String getNewFileName() {
+        return newFileName;
+    }
+
+    public void setNewFileName(String newFileName) {
+        this.newFileName = newFileName;
     }
 }

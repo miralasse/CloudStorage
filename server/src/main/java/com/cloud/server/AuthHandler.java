@@ -24,7 +24,8 @@ public class AuthHandler extends ChannelInboundHandlerAdapter {
                 System.out.println("AuthMessage received");
                 String login = ((AuthMessage) msg).getLogin();
                 String password = ((AuthMessage) msg).getPassword();
-                if (login.equals("elena") && password.equals("111")) {
+                AuthService authService = AuthService.getOurInstance();
+                if (authService.checkLoginAndPass(login, password)) {
                     authorized = true;
                     System.out.println("Client " + login + " authorized successfully");
                     CmdMessage authOkMsg = new CmdMessage(CmdMessage.Command.AUTH_CONFIRM);

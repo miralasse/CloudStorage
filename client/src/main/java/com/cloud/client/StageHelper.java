@@ -16,11 +16,11 @@ public class StageHelper {
     private StageHelper() {
     }
 
-    public Stage getStage() {
+    Stage getStage() {
         return stage;
     }
 
-    public void setStage(Stage stage) {
+    void setStage(Stage stage) {
         this.stage = stage;
     }
 }

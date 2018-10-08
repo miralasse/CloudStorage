@@ -43,7 +43,11 @@ public class LoginController {
             return;
         }
         Network.connect();
-        AuthMessage authMessage = new AuthMessage(loginField.getText(), passwordField.getText());
+        String login = loginField.getText().split("\\s")[0];    //защита от ввода нескольких слов
+        String password = passwordField.getText().split("\\s")[0];
+        System.out.println(login);
+        System.out.println(password);
+        AuthMessage authMessage = new AuthMessage(login, password);
         Network.sendMessage(authMessage);
         CmdMessage msgFromServer = (CmdMessage) Network.receiveMessage();
         if (msgFromServer.getCommand() == CmdMessage.Command.AUTH_CONFIRM) {
