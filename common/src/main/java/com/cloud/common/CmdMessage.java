@@ -8,12 +8,16 @@ public class CmdMessage extends Message {
         DOWNLOAD_FILE_FROM_SERVER,
         RENAME_FILE,
         DELETE_FILE,
-        REFRESH_FILE_LIST;
+        REFRESH_FILE_LIST,
+        CLIENT_EXIT,
+        SERVER_EXIT
     }
 
     private Command command;
     private String fileName;
     private String newFileName;
+    private static final long serialVersionUID = 12L;
+
 
     public CmdMessage(Command command) {
         this.command = command;

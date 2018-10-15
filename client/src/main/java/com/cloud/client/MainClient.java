@@ -16,6 +16,10 @@ public class MainClient extends Application {
         primaryStage.show();
     }
 
+    @Override
+    public void stop() throws Exception {
+        Network.disconnect();
+    }
 
     public static void main(String[] args) {
         launch(args);

@@ -30,7 +30,7 @@ public class AuthHandler extends ChannelInboundHandlerAdapter {
                     System.out.println("Client " + login + " authorized successfully");
                     CmdMessage authOkMsg = new CmdMessage(CmdMessage.Command.AUTH_CONFIRM);
                     ctx.writeAndFlush(authOkMsg);
-                    ctx.pipeline().remove(this.getClass());
+                    //ctx.pipeline().remove(this.getClass());
                     ctx.pipeline().addLast(new ServerHandler(login));
                 } else {
                     System.out.println("Client authorization data is incorrect");

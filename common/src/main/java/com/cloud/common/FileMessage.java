@@ -4,6 +4,7 @@ public class FileMessage extends Message {
     private String fileName;
     private long fileSize;
     private byte[] content;
+    private static final long serialVersionUID = 17L;
 
     public String getFileName() {
         return fileName;

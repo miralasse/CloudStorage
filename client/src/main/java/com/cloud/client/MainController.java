@@ -24,20 +24,14 @@ public class MainController implements Initializable {
 
     @FXML
     TableView<FileInfo> tableView;
-
-    private boolean closedByClient;
-
+    
     private ObservableList<FileInfo> fileList;
 
     private String fileNameFromTable;
     private String newFileName;
 
-    private StageHelper helper;
-
     @Override
     public void initialize(URL location, ResourceBundle resources) {
-        helper = StageHelper.getInstance();
-
         fileList = FXCollections.observableArrayList();
 
         TableColumn<FileInfo, String> tcFileName = new TableColumn<>("File");
@@ -69,18 +63,20 @@ public class MainController implements Initializable {
            @Override
            public void run() {
                try {
-                   while (!closedByClient) {    //цикл получения сообщений
+                   while (true) {    //цикл получения сообщений
                        Message msg = Network.receiveMessage();
-                       if (msg == null)
-                           return;
-                       System.out.println("Клиент получил сервера сообщение вида " + msg.getClass());
-                       if (msg instanceof FileListMessage) {
-                           System.out.println("Содержимое сообщения FileListMessage на клиенте: " + ((FileListMessage) msg).getFileList());
-                           updateFileList((FileListMessage) msg);
-                       } else if (msg instanceof FileMessage) {
-                           saveFile((FileMessage) msg);
-                       } else {
-                           System.out.println("Client received wrong object!");
+                       if (msg != null) {
+                           System.out.println("Клиент получил сервера сообщение вида " + msg.getClass());
+                           if (msg instanceof FileListMessage) {
+                               System.out.println("Содержимое сообщения FileListMessage на клиенте: " + ((FileListMessage) msg).getFileList());
+                               updateFileList((FileListMessage) msg);
+                           } else if (msg instanceof FileMessage) {
+                               saveFile((FileMessage) msg);
+                           } else if (msg instanceof CmdMessage){
+                               if (((CmdMessage) msg).getCommand() == CmdMessage.Command.SERVER_EXIT) {
+                                   break;
+                               }
+                           }
                        }
                    }
                } finally {
@@ -117,7 +113,7 @@ public class MainController implements Initializable {
     public void uploadFile() {    //отправляет файл на сервер
             FileChooser fileChooser = new FileChooser();
             fileChooser.setTitle("Upload file");
-            File selectedFile = fileChooser.showOpenDialog(helper.getStage());
+            File selectedFile = fileChooser.showOpenDialog(StageHelper.getStage());
             if (selectedFile != null) {
                 FileMessage fileMessage = new FileMessage();
                 Path uploadingFile = selectedFile.toPath();
@@ -155,7 +151,7 @@ public class MainController implements Initializable {
             FileChooser fileChooser = new FileChooser();
             fileChooser.setTitle("Save file");
             fileChooser.setInitialFileName(msg.getFileName());
-            File savedFile = fileChooser.showSaveDialog(helper.getStage());
+            File savedFile = fileChooser.showSaveDialog(StageHelper.getStage());
             if (savedFile != null) {
                 Path filePath = savedFile.toPath();
                 System.out.println("Клиент сохраняет файл " + filePath.toString());

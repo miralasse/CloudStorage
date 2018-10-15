@@ -33,16 +33,17 @@ public class LoginController {
         primaryStage.setTitle("Cloud Client");
         primaryStage.setScene(new Scene(root, 800, 400));
         primaryStage.show();
-        StageHelper helper = StageHelper.getInstance();
-        helper.setStage(primaryStage);
+        StageHelper.setStage(primaryStage);
     }
 
     public void sendAuthMsg() {
         if (loginField.getText().isEmpty() || passwordField.getText().isEmpty()) {
-            showAlert("Не указан логин или пароль");
+            StageHelper.showAlert("Не указан логин или пароль");
             return;
         }
-        Network.connect();
+        if (Network.getSocket() == null || Network.getSocket().isClosed()) {
+            Network.connect();
+        }
         String login = loginField.getText().split("\\s")[0];    //защита от ввода нескольких слов
         String password = passwordField.getText().split("\\s")[0];
         System.out.println(login);
@@ -58,25 +59,11 @@ public class LoginController {
                 e.printStackTrace();
             }
         } else if (msgFromServer.getCommand() == CmdMessage.Command.AUTH_WRONG){
-            Network.disconnect();
-            showAlert("Неверный логин/пароль");
+            StageHelper.showAlert("Неверный логин/пароль");
         } else {
-            Network.disconnect();
-            showAlert("Произошла ошибка при авторизации");
-
+            StageHelper.showAlert("Произошла ошибка при авторизации");
         }
     }
 
-    public void showAlert(String msg){
-        Platform.runLater(new Runnable() {
-            @Override
-            public void run() {
-                Alert alert = new Alert(Alert.AlertType.INFORMATION);
-                alert.setTitle("Возникли проблемы");
-                alert.setHeaderText(null);
-                alert.setContentText(msg);
-                alert.showAndWait();
-            }
-        });
-    }
+
 }

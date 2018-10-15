@@ -1,5 +1,6 @@
 package com.cloud.client;
 
+import com.cloud.common.CmdMessage;
 import com.cloud.common.Message;
 import io.netty.handler.codec.serialization.ObjectDecoderInputStream;
 import io.netty.handler.codec.serialization.ObjectEncoderOutputStream;
@@ -13,6 +14,14 @@ public class Network {
     private static ObjectDecoderInputStream inputStream;
     private static final String SERVER_IP = "localhost";
     private static final int PORT = 8189;
+
+    public static Socket getSocket() {
+        return socket;
+    }
+
+    public static void setSocket(Socket socket) {
+        Network.socket = socket;
+    }
 
     public static void connect() {
         try {
@@ -47,6 +56,9 @@ public class Network {
     }
 
     public static void disconnect() {
+        if (!(socket == null || socket.isClosed())) {
+            sendMessage(new CmdMessage(CmdMessage.Command.CLIENT_EXIT));
+        }
         try {
             if (outputStream != null) {
                 outputStream.close();
@@ -69,6 +81,4 @@ public class Network {
             e.printStackTrace();
         }
     }
-
-
 }
