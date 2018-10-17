@@ -16,6 +16,7 @@ import javafx.stage.FileChooser;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.RandomAccessFile;
 import java.net.URL;
 import java.nio.file.*;
 import java.util.*;
@@ -46,7 +47,7 @@ public class MainController implements Initializable {
         tableView.setOnMouseClicked(new EventHandler<MouseEvent>() {
             @Override
             public void handle(MouseEvent event) {
-                if (event.getClickCount() == 2) {
+                if (event.getClickCount() >= 1) {
                     if (tableView.getSelectionModel().getSelectedItem() != null) {
                         fileNameFromTable = tableView.getSelectionModel().getSelectedItem().getFileName();
                         System.out.println("Пользователь выбрал в таблице файл " + fileNameFromTable);
@@ -133,6 +134,44 @@ public class MainController implements Initializable {
                 System.out.println("Uploading file cancelled");
             }
     }
+
+    public void uploadFilePartly() {
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Upload file");
+        File selectedFile = fileChooser.showOpenDialog(StageHelper.getStage()); //выбрали файл
+        if (selectedFile != null) {
+            FilePartMessage filePartMsg = new FilePartMessage(); //создали объект сообщения
+            filePartMsg.setFileName(selectedFile.getName());
+            System.out.println("Клиент выбрал для загрузки на сервер файл " + selectedFile.getName());
+            int numOfParts = (int) Math.ceil((double) selectedFile.length()/Settings.MAX_FILE_PART_SIZE);
+            byte[] contentPart;
+            if (numOfParts == 1) {
+                contentPart = new byte[(int)selectedFile.length()];
+            } else {
+                contentPart = new byte[Settings.MAX_FILE_PART_SIZE];
+            }
+            try (RandomAccessFile raf = new RandomAccessFile(selectedFile, "r")) {
+                for (int i = 0; i < numOfParts; i++) {    //цикл отправки частей файла в сообщениях
+                    raf.seek(i * Settings.MAX_FILE_PART_SIZE);
+                    int bytesRead = raf.read(contentPart);
+                    filePartMsg.setPartNumber(i);
+                    filePartMsg.setNumOfParts(numOfParts);
+                    filePartMsg.setPartSize(bytesRead);
+                    filePartMsg.setContent(Arrays.copyOf(contentPart, bytesRead));
+                    System.out.println(filePartMsg.getFileName() + " "
+                            + filePartMsg.getNumOfParts() + "частей "
+                            + filePartMsg.getPartNumber() + "- номер части "
+                            + filePartMsg.getPartSize() + " байт размером");
+
+                    Network.sendMessage(filePartMsg);
+                    Arrays.fill(contentPart, (byte) 0);
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
 
     public void askForDownload() {    //запрашивает файл у сервера
         System.out.println("askForDownload запущен");
