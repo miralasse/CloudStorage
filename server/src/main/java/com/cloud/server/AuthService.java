@@ -6,7 +6,7 @@ public class AuthService {
     private static AuthService ourInstance;
 
     private Connection connection;
-    private Statement statement;
+    private PreparedStatement preparedStatement;
 
     private AuthService(){}
 
@@ -19,19 +19,21 @@ public class AuthService {
     public void connect() throws ClassNotFoundException, SQLException {
         Class.forName("org.sqlite.JDBC");
         connection = DriverManager.getConnection("jdbc:sqlite:server/cloudDB.db");
-        statement = connection.createStatement();
     }
 
     public boolean checkLoginAndPass(String login, String password){
         ResultSet set = null;
         try {
-            set = statement.executeQuery("SELECT user_id FROM users WHERE login = '" + login + "' AND password = '" + password + "';");
+            preparedStatement = connection.prepareStatement("SELECT user_id FROM users WHERE login = ? AND password = ?;");
+            preparedStatement.setString(1, login);
+            preparedStatement.setString(2, password);
+            set = preparedStatement.executeQuery();
             while (set.next()){
                 System.out.println(set.getInt("user_id"));
                 return (set.getInt("user_id") > 0);
             }
         } catch (SQLException e) {
-            System.out.println("Ошибка при работе с базой данных");
+            System.out.println("Error occurred while working with database");
             e.printStackTrace();
         }
         return false;
@@ -40,10 +42,10 @@ public class AuthService {
 
     public void disconnect(){
         try {
-            statement.close();
+            preparedStatement.close();
             connection.close();
         } catch (SQLException e) {
-            System.out.println("Ошибка при отключении сервиса авторизации");
+            System.out.println("Error occurred while disconnecting auth service");
             e.printStackTrace();
         }
     }
