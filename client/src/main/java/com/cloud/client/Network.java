@@ -15,12 +15,14 @@ public class Network {
     private static final String SERVER_IP = "localhost";
     private static final int PORT = 8189;
 
+    private static MainController mainController;
+
     public static Socket getSocket() {
         return socket;
     }
 
-    public static void setSocket(Socket socket) {
-        Network.socket = socket;
+    public static void setMainController(MainController mainController) {
+        Network.mainController = mainController;
     }
 
     public static void connect() {
@@ -31,17 +33,14 @@ public class Network {
         } catch (IOException e) {
             e.printStackTrace();
         }
-
     }
 
-    public static boolean sendMessage(Message msg) {
+    public static void sendMessage(Message msg) {
         try {
             outputStream.writeObject(msg);
             outputStream.flush();
-            return true;
         } catch (IOException e) {
             e.printStackTrace();
-            return false;
         }
     }
 
@@ -56,7 +55,8 @@ public class Network {
     }
 
     public static void disconnect() {
-        if (!(socket == null || socket.isClosed())) {
+        mainController.setClosedByClient(true);
+        if (socket != null && !socket.isClosed()) {
             sendMessage(new CmdMessage(CmdMessage.Command.CLIENT_EXIT));
         }
         try {
@@ -74,7 +74,7 @@ public class Network {
             e.printStackTrace();
         }
         try {
-            if (!(socket == null || socket.isClosed())) {
+            if (socket != null && !socket.isClosed()) {
                 socket.close();
             }
         } catch (IOException e) {

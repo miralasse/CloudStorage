@@ -11,7 +11,9 @@ import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextInputDialog;
 import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.scene.input.Dragboard;
 import javafx.scene.input.MouseEvent;
+import javafx.scene.input.TransferMode;
 import javafx.stage.FileChooser;
 
 import java.io.File;
@@ -30,6 +32,16 @@ public class MainController implements Initializable {
 
     private String fileNameFromTable;
     private String newFileName;
+
+    private boolean closedByClient;
+
+    public boolean isClosedByClient() {
+        return closedByClient;
+    }
+
+    public void setClosedByClient(boolean closedByClient) {
+        this.closedByClient = closedByClient;
+    }
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {
@@ -55,38 +67,55 @@ public class MainController implements Initializable {
                 }
             }
         });
+
+        //протаскивание на таблицу файлов
+        tableView.setOnDragOver(event -> {
+            if (event.getGestureSource() != tableView && event.getDragboard().hasFiles()) {
+                event.acceptTransferModes(TransferMode.COPY_OR_MOVE);
+            }
+            event.consume();
+        });
+
+        tableView.setOnDragDropped(event -> {
+            Dragboard dragboard = event.getDragboard();
+            boolean success = false;
+            if (dragboard.hasFiles()) {
+                for (int i = 0; i < dragboard.getFiles().size(); i++) {
+                    sendFilePartly(dragboard.getFiles().get(i));
+                }
+                success = true;
+            }
+            event.setDropCompleted(success);
+            event.consume();
+        });
+
+
+
         listenToServer();
         askForFileList();
     }
 
-    public void listenToServer(){
-       Thread t = new Thread(new Runnable() {
-           @Override
-           public void run() {
-               try {
-                   while (true) {    //цикл получения сообщений
-                       Message msg = Network.receiveMessage();
-                       if (msg != null) {
-                           System.out.println("Клиент получил сервера сообщение вида " + msg.getClass());
-                           if (msg instanceof FileListMessage) {
-                               System.out.println("Содержимое сообщения FileListMessage на клиенте: " + ((FileListMessage) msg).getFileList());
-                               updateFileList((FileListMessage) msg);
-                           } else if (msg instanceof FileMessage) {
-                               saveFile((FileMessage) msg);
-                           } else if (msg instanceof CmdMessage){
-                               if (((CmdMessage) msg).getCommand() == CmdMessage.Command.SERVER_EXIT) {
-                                   break;
-                               }
-                           }
-                       }
-                   }
-               } finally {
-                   Network.disconnect();
-               }
-           }
-       });
-            t.setDaemon(true);
-            t.start();
+    public void listenToServer() {
+        Thread t = new Thread(() -> {
+            while (!closedByClient) {    //цикл получения сообщений
+                Message msg = Network.receiveMessage();
+                if (msg != null) {
+                    System.out.println("Клиент получил сервера сообщение вида " + msg.getClass());
+                    if (msg instanceof FileListMessage) {
+                        updateFileList((FileListMessage) msg);
+                    } else if (msg instanceof FilePartMessage) {
+                        savePartFile((FilePartMessage) msg);
+                    } else if (msg instanceof CmdMessage) {
+                        if (((CmdMessage) msg).getCommand() == CmdMessage.Command.SERVER_EXIT) {
+                            Network.disconnect();
+                            break;
+                        }
+                    }
+                }
+            }
+        });
+        t.setDaemon(true);
+        t.start();
     }
 
     public void askForFileList() {    //запращивает у сервера обновленный список файлов
@@ -96,53 +125,31 @@ public class MainController implements Initializable {
     }
 
     public void updateFileList(FileListMessage msg) {  //обновляет список файлов на основании данных от сервера
-        if (Platform.isFxApplicationThread()) {
+        final Runnable updateListRunnable = () -> {
             fileList.clear();
             fileList.addAll(msg.getFileList());
             System.out.println("Содержимое списка файлов: " + fileList);
             System.out.println("Список файлов обновлен на основании сообщения от сервера");
+        };
+        if (Platform.isFxApplicationThread()) {
+            updateListRunnable.run();
         } else {
-            Platform.runLater(() -> {
-                fileList.clear();
-                fileList.addAll(msg.getFileList());
-                System.out.println("Содержимое списка файлов: " + fileList);
-                System.out.println("Список файлов обновлен на основании сообщения от сервера в runLater");
-            });
+            Platform.runLater(updateListRunnable);
         }
     }
 
-    public void uploadFile() {    //отправляет файл на сервер
-            FileChooser fileChooser = new FileChooser();
-            fileChooser.setTitle("Upload file");
-            File selectedFile = fileChooser.showOpenDialog(StageHelper.getStage());
-            if (selectedFile != null) {
-                FileMessage fileMessage = new FileMessage();
-                Path uploadingFile = selectedFile.toPath();
-                fileMessage.setFileName(uploadingFile.getFileName().toString());
-                System.out.println("Клиент выбрал для загрузки на сервер файл " + uploadingFile.getFileName());
-                fileMessage.setFileSize(uploadingFile.toFile().length());
-                try {
-                    fileMessage.setContent(Files.readAllBytes(uploadingFile));
-                    System.out.println("Контент файла записан для отправки");
-                } catch (IOException e) {
-                    System.out.println("Writing FileMessage failed");
-                    e.printStackTrace();
-                }
-                Network.sendMessage(fileMessage);
-                System.out.println("Файл отправлен на сервер");
-            } else {
-                System.out.println("Uploading file cancelled");
-            }
-    }
-
-    public void uploadFilePartly() {
+    public void uploadFile() {
         FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle("Upload file");
-        File selectedFile = fileChooser.showOpenDialog(StageHelper.getStage()); //выбрали файл
+        sendFilePartly(fileChooser.showOpenDialog(StageHelper.getStage()));
+    }
+
+    public void sendFilePartly(File selectedFile) {    //отправляет файл на сервер по частям
         if (selectedFile != null) {
             FilePartMessage filePartMsg = new FilePartMessage(); //создали объект сообщения
             filePartMsg.setFileName(selectedFile.getName());
             System.out.println("Клиент выбрал для загрузки на сервер файл " + selectedFile.getName());
+
             int numOfParts = (int) Math.ceil((double) selectedFile.length()/Settings.MAX_FILE_PART_SIZE);
             byte[] contentPart;
             if (numOfParts == 1) {
@@ -151,16 +158,18 @@ public class MainController implements Initializable {
                 contentPart = new byte[Settings.MAX_FILE_PART_SIZE];
             }
             try (RandomAccessFile raf = new RandomAccessFile(selectedFile, "r")) {
-                for (int i = 0; i < numOfParts; i++) {    //цикл отправки частей файла в сообщениях
+                for (int i = 0; i < numOfParts; i++) {        //цикл отправки частей файла в сообщениях
                     raf.seek(i * Settings.MAX_FILE_PART_SIZE);
                     int bytesRead = raf.read(contentPart);
+
                     filePartMsg.setPartNumber(i);
                     filePartMsg.setNumOfParts(numOfParts);
                     filePartMsg.setPartSize(bytesRead);
                     filePartMsg.setContent(Arrays.copyOf(contentPart, bytesRead));
-                    System.out.println(filePartMsg.getFileName() + " "
-                            + filePartMsg.getNumOfParts() + "частей "
-                            + filePartMsg.getPartNumber() + "- номер части "
+
+                    System.out.println(filePartMsg.getFileName() + " : "
+                            + filePartMsg.getNumOfParts() + " частей "
+                            + filePartMsg.getPartNumber() + " - номер части "
                             + filePartMsg.getPartSize() + " байт размером");
 
                     Network.sendMessage(filePartMsg);
@@ -172,59 +181,63 @@ public class MainController implements Initializable {
         }
     }
 
-
     public void askForDownload() {    //запрашивает файл у сервера
-        System.out.println("askForDownload запущен");
-        if (fileNameFromTable == null)
-            return;
-        CmdMessage cmdMessage = new CmdMessage(CmdMessage.Command.DOWNLOAD_FILE_FROM_SERVER);
-        cmdMessage.setFileName(fileNameFromTable);
-        Network.sendMessage(cmdMessage);
-        System.out.println(cmdMessage);
-        System.out.println("Значение поля имя файла из сообщения: " + cmdMessage.getFileName());
-        System.out.println("Клиент запросил у сервера файл " + fileNameFromTable);
+        if (fileNameFromTable != null) {
+            CmdMessage cmdMessage = new CmdMessage(CmdMessage.Command.DOWNLOAD_FILE_FROM_SERVER);
+            cmdMessage.setFileName(fileNameFromTable);
+            Network.sendMessage(cmdMessage);
+            System.out.println("Клиент запросил у сервера файл " + fileNameFromTable);
+        }
     }
 
-    private void saveFile(FileMessage msg) {    //сохраняет файл, пришедший с сервера
+    private void savePartFile(FilePartMessage msg) {    //сохраняет часть файла, пришедшую с сервера
+        if (msg.getFileName() == null || msg.getContent() == null)
+            return;
         Platform.runLater(() -> {
             FileChooser fileChooser = new FileChooser();
             fileChooser.setTitle("Save file");
             fileChooser.setInitialFileName(msg.getFileName());
-            File savedFile = fileChooser.showSaveDialog(StageHelper.getStage());
-            if (savedFile != null) {
-                Path filePath = savedFile.toPath();
-                System.out.println("Клиент сохраняет файл " + filePath.toString());
-                byte[] content = msg.getContent();
+            File storedFile = fileChooser.showSaveDialog(StageHelper.getStage());
+
+            if (storedFile != null) {
+                Path filePath = storedFile.toPath();
                 try {
-                    Files.write(filePath, content);
-                    System.out.println("Файл сохранен");
+                    if (!Files.exists(filePath)) {
+                        Files.createFile(filePath);
+                    }
+                    RandomAccessFile raf = new RandomAccessFile(filePath.toFile(), "rw");
+                    raf.seek(msg.getPartNumber() * Settings.MAX_FILE_PART_SIZE);
+                    raf.write(msg.getContent());
+                    raf.close();
                 } catch (IOException e) {
                     e.printStackTrace();
-                    System.out.println("Saving file failed");
                 }
             } else {
                 System.out.println("Saving file cancelled");
             }
         });
+
+
+
     }
 
     public void deleteFile() {    //запрашивает удаление файла у сервера
-        if (fileNameFromTable == null)
-            return;
-        CmdMessage cmdMessage = new CmdMessage(CmdMessage.Command.DELETE_FILE);
-        cmdMessage.setFileName(fileNameFromTable);
-        Network.sendMessage(cmdMessage);
-        System.out.println("Клиент запросил у сервера удаление файла " + fileNameFromTable);
+        if (fileNameFromTable != null) {
+            CmdMessage cmdMessage = new CmdMessage(CmdMessage.Command.DELETE_FILE);
+            cmdMessage.setFileName(fileNameFromTable);
+            Network.sendMessage(cmdMessage);
+            System.out.println("Клиент запросил у сервера удаление файла " + fileNameFromTable);
+        }
     }
 
     public void renameFile() {    //запрашивает переименование файла у сервера
-        if (fileNameFromTable == null || newFileName == null)
-            return;
-        CmdMessage cmdMessage = new CmdMessage(CmdMessage.Command.RENAME_FILE);
-        cmdMessage.setFileName(fileNameFromTable);
-        cmdMessage.setNewFileName(newFileName);
-        Network.sendMessage(cmdMessage);
-        System.out.println("Клиент запросил у сервера переименование файла " + fileNameFromTable + " в имя " + newFileName);
+        if (fileNameFromTable != null || newFileName != null) {
+            CmdMessage cmdMessage = new CmdMessage(CmdMessage.Command.RENAME_FILE);
+            cmdMessage.setFileName(fileNameFromTable);
+            cmdMessage.setNewFileName(newFileName);
+            Network.sendMessage(cmdMessage);
+            System.out.println("Клиент запросил у сервера переименование файла " + fileNameFromTable + " в имя " + newFileName);
+        }
     }
 
     public void enterNewFileName() {    //запрашивает новое имя файла у пользователя

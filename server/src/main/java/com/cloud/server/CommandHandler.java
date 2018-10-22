@@ -1,14 +1,14 @@
 package com.cloud.server;
 
-import com.cloud.common.CmdMessage;
-import com.cloud.common.FileInfo;
-import com.cloud.common.FileListMessage;
-import com.cloud.common.FileMessage;
+import com.cloud.common.*;
 import io.netty.channel.ChannelHandlerContext;
 
+import java.io.File;
 import java.io.IOException;
+import java.io.RandomAccessFile;
 import java.nio.file.*;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -22,8 +22,8 @@ public class CommandHandler {
                     String fileToDownload = msg.getFileName();
                     System.out.println(fileToDownload);
                     if (fileToDownload != null) {
-                        ctx.writeAndFlush(getFileMessage(fileToDownload, clientDirectory));
-                        System.out.println("FileMessage sent");
+                        sendFilePartly(ctx, fileToDownload, clientDirectory);
+                        System.out.println("File sent");
                     }
                     break;
 
@@ -69,7 +69,6 @@ public class CommandHandler {
 
     public static void sendFileList(ChannelHandlerContext ctx, Path clientDirectory) {
         FileListMessage listMessage = new FileListMessage(getFileList(clientDirectory));
-        System.out.println("Содержимое сообщения FileListMessage на сервере: " + listMessage.getFileList());
         ctx.writeAndFlush(listMessage);
         System.out.println("Список файлов отправлен");
     }
@@ -98,33 +97,62 @@ public class CommandHandler {
         }
     }
 
-    private static FileMessage getFileMessage(String fileName, Path clientDirectory) {
-        FileMessage fileMessage = new FileMessage();
-        Path file = Paths.get(clientDirectory + "/" + fileName);
-        fileMessage.setFileName(file.getFileName().toString());
-        fileMessage.setFileSize(file.toFile().length());
-        try {
-            fileMessage.setContent(Files.readAllBytes(file));
-            System.out.println("FileMessage is ready to be sent");
+    private static void sendFilePartly(ChannelHandlerContext ctx, String fileName, Path clientDirectory) {
+        FilePartMessage filePartMsg = new FilePartMessage();
+        File file = Paths.get(clientDirectory + "/" + fileName).toFile();
+        filePartMsg.setFileName(file.getName());
+        int numOfParts = (int) Math.ceil((double) file.length()/Settings.MAX_FILE_PART_SIZE);
+        byte[] contentPart;
+        if (numOfParts == 1) {
+            contentPart = new byte[(int)file.length()];
+        } else {
+            contentPart = new byte[Settings.MAX_FILE_PART_SIZE];
+        }
+        try (RandomAccessFile raf = new RandomAccessFile(file, "r")) {
+            for (int i = 0; i < numOfParts; i++) {    //цикл отправки частей файла в сообщениях
+                raf.seek(i * Settings.MAX_FILE_PART_SIZE);
+                int bytesRead = raf.read(contentPart);
+
+                filePartMsg.setPartNumber(i);
+                filePartMsg.setNumOfParts(numOfParts);
+                filePartMsg.setPartSize(bytesRead);
+                filePartMsg.setContent(Arrays.copyOf(contentPart, bytesRead));
+
+                System.out.println(filePartMsg.getFileName() + " : "
+                        + filePartMsg.getNumOfParts() + " частей "
+                        + filePartMsg.getPartNumber() + " - номер части "
+                        + filePartMsg.getPartSize() + " байт размером");
+
+                ctx.writeAndFlush(filePartMsg);
+                Arrays.fill(contentPart, (byte) 0);
+            }
         } catch (IOException e) {
-            System.out.println("Making FileMessage failed");
             e.printStackTrace();
         }
-        return fileMessage;
     }
 
-    public static void saveFileToStorage (FileMessage msg, Path clientDirectory) {
+    public static boolean saveFileToStorage(FilePartMessage msg, Path clientDirectory) {
+        System.out.println("Server received file part");
         if (msg.getFileName() == null || msg.getContent() == null)
-            return;
+            return false;
         Path filePath = Paths.get(clientDirectory + "/" + msg.getFileName());
-        byte[] content = msg.getContent();
         try {
-            Files.write(filePath, content);
-            System.out.println("File " + filePath.toString() + " has been uploaded");
+            if (!Files.exists(filePath)) {
+                Files.createFile(filePath);
+            }
+            RandomAccessFile raf = new RandomAccessFile(filePath.toFile(), "rw");
+            System.out.println(msg.getFileName() + " "
+                    + msg.getNumOfParts() + " частей "
+                    + msg.getPartNumber() + " - номер части "
+                    + msg.getPartSize() + " байт размером");
+
+            raf.seek(msg.getPartNumber() * Settings.MAX_FILE_PART_SIZE);
+            raf.write(msg.getContent());
+            raf.close();
         } catch (IOException e) {
-            System.out.println("Uploading file failed");
             e.printStackTrace();
         }
+        return (msg.getPartNumber() == msg.getNumOfParts() - 1);
     }
 
 }

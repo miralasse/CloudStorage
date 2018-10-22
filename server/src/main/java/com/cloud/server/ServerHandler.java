@@ -1,17 +1,13 @@
 package com.cloud.server;
 
 import com.cloud.common.CmdMessage;
-import com.cloud.common.FileMessage;
 import com.cloud.common.FilePartMessage;
-import com.cloud.common.Settings;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.util.ReferenceCountUtil;
 
 import java.io.IOException;
-import java.io.RandomAccessFile;
 import java.nio.file.*;
-
 
 public class ServerHandler extends ChannelInboundHandlerAdapter {
     private Path clientDirectory;
@@ -30,33 +26,12 @@ public class ServerHandler extends ChannelInboundHandlerAdapter {
         try {
             if (msg == null)
                 return;
-            System.out.println(msg.getClass());
             if (msg instanceof CmdMessage) {
                 CommandHandler.handle(ctx, (CmdMessage) msg, clientDirectory);
-            } else if (msg instanceof FileMessage) {
-                CommandHandler.saveFileToStorage((FileMessage) msg, clientDirectory);
-                CommandHandler.sendFileList(ctx, clientDirectory);
-
             } else if (msg instanceof FilePartMessage) {
-                System.out.println("Server received file part");
-                if ((((FilePartMessage) msg).getFileName() == null || ((FilePartMessage) msg).getContent() == null))
-                    return;
-                Path filePath = Paths.get(clientDirectory + "/" + ((FilePartMessage) msg).getFileName());
-                if (!Files.exists(filePath)) {
-                    Files.createFile(filePath);
-                }
-                try (RandomAccessFile raf = new RandomAccessFile(filePath.toFile(), "rw")) {
-                    System.out.println(((FilePartMessage) msg).getFileName() + " "
-                            + ((FilePartMessage) msg).getNumOfParts() + "частей "
-                            + ((FilePartMessage) msg).getPartNumber() + "- номер части "
-                            + ((FilePartMessage) msg).getPartSize() + " байт размером");
-
-                    System.out.println("Позиция " + ((FilePartMessage) msg).getPartNumber() * Settings.MAX_FILE_PART_SIZE);
-                    raf.seek(((FilePartMessage) msg).getPartNumber() * Settings.MAX_FILE_PART_SIZE);
-                    raf.write(((FilePartMessage) msg).getContent());
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
+                boolean lastPart = CommandHandler.saveFileToStorage((FilePartMessage) msg, clientDirectory);
+                if (lastPart)
+                    CommandHandler.sendFileList(ctx, clientDirectory);
             }
         } finally {
             ReferenceCountUtil.release(msg);

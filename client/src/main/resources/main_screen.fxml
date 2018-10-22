@@ -19,7 +19,7 @@
     </TableView>
 
     <HBox>
-        <Button text="Upload file" HBox.hgrow="ALWAYS" maxWidth="Infinity" onAction="#uploadFilePartly">
+        <Button text="Upload file" HBox.hgrow="ALWAYS" maxWidth="Infinity" onAction="#uploadFile">
             <graphic>
                 <ImageView fitHeight="50.0" fitWidth="50.0" pickOnBounds="true" preserveRatio="true">
                     <image>

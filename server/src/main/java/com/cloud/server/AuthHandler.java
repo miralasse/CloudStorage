@@ -33,7 +33,7 @@ public class AuthHandler extends ChannelInboundHandlerAdapter {
                     //ctx.pipeline().remove(this.getClass());
                     ctx.pipeline().addLast(new ServerHandler(login));
                 } else {
-                    System.out.println("Client authorization data is incorrect");
+                    System.out.println("Client's authorization data is incorrect");
                     CmdMessage authWrongMsg = new CmdMessage(CmdMessage.Command.AUTH_WRONG);
                     ctx.writeAndFlush(authWrongMsg);
                 }

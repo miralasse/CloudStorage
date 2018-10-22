@@ -18,7 +18,9 @@ public class MainClient extends Application {
 
     @Override
     public void stop() throws Exception {
-        Network.disconnect();
+        if (Network.getSocket() != null && !(Network.getSocket().isClosed())) {
+            Network.disconnect();
+        }
     }
 
     public static void main(String[] args) {

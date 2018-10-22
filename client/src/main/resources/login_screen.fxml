@@ -57,7 +57,7 @@
                        promptText="Password"/>
     </HBox>
 
-    <Button onAction="#sendAuthMsg"
+    <Button onAction="#authorize"
             prefWidth="100"
             text="Log In">
             <!--style="-fx-background-color: linear-gradient(#efd100 0, #e2a233 38%, #f0c328 60%, #fff1a3 86%, #ffe13e 100%);"> -->
