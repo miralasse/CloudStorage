@@ -2,8 +2,10 @@ package com.cloud.client;
 
 import com.cloud.common.CmdMessage;
 import com.cloud.common.Message;
+import com.cloud.common.Settings;
 import io.netty.handler.codec.serialization.ObjectDecoderInputStream;
 import io.netty.handler.codec.serialization.ObjectEncoderOutputStream;
+import javafx.application.Platform;
 
 import java.io.IOException;
 import java.net.Socket;
@@ -15,21 +17,15 @@ public class Network {
     private static final String SERVER_IP = "localhost";
     private static final int PORT = 8189;
 
-    private static MainController mainController;
-
     public static Socket getSocket() {
         return socket;
-    }
-
-    public static void setMainController(MainController mainController) {
-        Network.mainController = mainController;
     }
 
     public static void connect() {
         try {
             socket = new Socket(SERVER_IP, PORT);
-            inputStream = new ObjectDecoderInputStream(socket.getInputStream());
-            outputStream = new ObjectEncoderOutputStream(socket.getOutputStream());
+            inputStream = new ObjectDecoderInputStream(socket.getInputStream(), Settings.MAX_OBJ_SIZE);
+            outputStream = new ObjectEncoderOutputStream(socket.getOutputStream(), Settings.MAX_OBJ_SIZE);
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -44,18 +40,11 @@ public class Network {
         }
     }
 
-    public static Message receiveMessage() {
-        Message msgFromServer = null;
-        try {
-            msgFromServer = (Message) inputStream.readObject();
-        } catch (IOException | ClassNotFoundException e) {
-            e.printStackTrace();
-        }
-        return msgFromServer;
+    public static Message receiveMessage() throws IOException, ClassNotFoundException {
+        return (Message) inputStream.readObject();    //блокирующая операция - тред висит и ждет объект
     }
 
     public static void disconnect() {
-        mainController.setClosedByClient(true);
         if (socket != null && !socket.isClosed()) {
             sendMessage(new CmdMessage(CmdMessage.Command.CLIENT_EXIT));
         }
@@ -80,5 +69,6 @@ public class Network {
         } catch (IOException e) {
             e.printStackTrace();
         }
+        Platform.exit();
     }
 }

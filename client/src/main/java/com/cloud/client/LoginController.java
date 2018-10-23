@@ -29,8 +29,6 @@ public class LoginController {
         Stage primaryStage = new Stage();
         FXMLLoader loader = new FXMLLoader(getClass().getResource("/main_screen.fxml"));
         Parent root = loader.load();
-        MainController mainController = loader.getController();
-        Network.setMainController(mainController);
 
         primaryStage.setTitle("Cloud Client");
         primaryStage.setScene(new Scene(root, 800, 400));
@@ -52,18 +50,19 @@ public class LoginController {
         System.out.println(password);
         AuthMessage authMessage = new AuthMessage(login, password);
         Network.sendMessage(authMessage);
-        CmdMessage msgFromServer = (CmdMessage) Network.receiveMessage();
-        if (msgFromServer.getCommand() == CmdMessage.Command.AUTH_CONFIRM) {
-            System.out.println("Answer from server: " + msgFromServer.getCommand());
-            try {
+        try {
+            CmdMessage msgFromServer = (CmdMessage) Network.receiveMessage();
+            if (msgFromServer.getCommand() == CmdMessage.Command.AUTH_CONFIRM) {
+                System.out.println("Answer from server: " + msgFromServer.getCommand());
                 changeStage();
-            } catch (IOException e) {
-                e.printStackTrace();
+            } else if (msgFromServer.getCommand() == CmdMessage.Command.AUTH_WRONG) {
+                StageHelper.showAlert("Sorry, wrong login or password. Please, try again");
+            } else {
+                StageHelper.showAlert("Something went wrong. Please, try again.");
             }
-        } else if (msgFromServer.getCommand() == CmdMessage.Command.AUTH_WRONG){
-            StageHelper.showAlert("Sorry, wrong login or password. Please, try again");
-        } else {
+        } catch (ClassNotFoundException | IOException e) {
             StageHelper.showAlert("Something went wrong. Please, try again.");
+            e.printStackTrace();
         }
     }
 

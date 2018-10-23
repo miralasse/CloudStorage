@@ -21,6 +21,7 @@ public class MainClient extends Application {
         if (Network.getSocket() != null && !(Network.getSocket().isClosed())) {
             Network.disconnect();
         }
+        System.out.println("Closing Client's window");
     }
 
     public static void main(String[] args) {

@@ -1,5 +1,6 @@
 package com.cloud.server;
 
+import com.cloud.common.Settings;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelInitializer;
@@ -14,7 +15,7 @@ import io.netty.handler.codec.serialization.ObjectEncoder;
 
 public class Server {
     private static final int PORT = 8189;
-    private static final int MAX_OBJ_SIZE = 1024 * 1024 * 100; // 100 mb
+    private static final int MAX_OBJ_SIZE = Settings.MAX_OBJ_SIZE;
     private AuthService authService;
 
     public Server() {

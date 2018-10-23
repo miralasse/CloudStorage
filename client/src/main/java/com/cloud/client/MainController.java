@@ -32,16 +32,7 @@ public class MainController implements Initializable {
 
     private String fileNameFromTable;
     private String newFileName;
-
-    private boolean closedByClient;
-
-    public boolean isClosedByClient() {
-        return closedByClient;
-    }
-
-    public void setClosedByClient(boolean closedByClient) {
-        this.closedByClient = closedByClient;
-    }
+    private File storedFile;
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {
@@ -68,7 +59,7 @@ public class MainController implements Initializable {
             }
         });
 
-        //протаскивание на таблицу файлов
+        //drag'n'drop
         tableView.setOnDragOver(event -> {
             if (event.getGestureSource() != tableView && event.getDragboard().hasFiles()) {
                 event.acceptTransferModes(TransferMode.COPY_OR_MOVE);
@@ -97,21 +88,26 @@ public class MainController implements Initializable {
 
     public void listenToServer() {
         Thread t = new Thread(() -> {
-            while (!closedByClient) {    //цикл получения сообщений
-                Message msg = Network.receiveMessage();
-                if (msg != null) {
-                    System.out.println("Клиент получил сервера сообщение вида " + msg.getClass());
-                    if (msg instanceof FileListMessage) {
-                        updateFileList((FileListMessage) msg);
-                    } else if (msg instanceof FilePartMessage) {
-                        savePartFile((FilePartMessage) msg);
-                    } else if (msg instanceof CmdMessage) {
-                        if (((CmdMessage) msg).getCommand() == CmdMessage.Command.SERVER_EXIT) {
-                            Network.disconnect();
-                            break;
+            try {
+                while (true) {    //цикл получения сообщений
+                    Message msg = Network.receiveMessage();
+                    if (msg != null) {
+                        System.out.println("Клиент получил сервера сообщение вида " + msg.getClass());
+                        if (msg instanceof FileListMessage) {
+                            updateFileList((FileListMessage) msg);
+                        } else if (msg instanceof FilePartMessage) {
+                            savePartFile((FilePartMessage) msg);
+                        } else if (msg instanceof CmdMessage) {
+                            if (((CmdMessage) msg).getCommand() == CmdMessage.Command.SERVER_EXIT) {
+                                break;
+                            }
                         }
                     }
                 }
+            } catch (ClassNotFoundException | IOException e) {
+                e.printStackTrace();
+            } finally {
+                Network.disconnect();
             }
         });
         t.setDaemon(true);
@@ -138,7 +134,7 @@ public class MainController implements Initializable {
         }
     }
 
-    public void uploadFile() {
+    public void uploadFile() {    //срабатывает по кнопке Загрузить файл
         FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle("Upload file");
         sendFilePartly(fileChooser.showOpenDialog(StageHelper.getStage()));
@@ -182,43 +178,43 @@ public class MainController implements Initializable {
     }
 
     public void askForDownload() {    //запрашивает файл у сервера
-        if (fileNameFromTable != null) {
-            CmdMessage cmdMessage = new CmdMessage(CmdMessage.Command.DOWNLOAD_FILE_FROM_SERVER);
-            cmdMessage.setFileName(fileNameFromTable);
-            Network.sendMessage(cmdMessage);
-            System.out.println("Клиент запросил у сервера файл " + fileNameFromTable);
-        }
-    }
-
-    private void savePartFile(FilePartMessage msg) {    //сохраняет часть файла, пришедшую с сервера
-        if (msg.getFileName() == null || msg.getContent() == null)
-            return;
         Platform.runLater(() -> {
             FileChooser fileChooser = new FileChooser();
             fileChooser.setTitle("Save file");
-            fileChooser.setInitialFileName(msg.getFileName());
-            File storedFile = fileChooser.showSaveDialog(StageHelper.getStage());
-
-            if (storedFile != null) {
-                Path filePath = storedFile.toPath();
-                try {
-                    if (!Files.exists(filePath)) {
-                        Files.createFile(filePath);
-                    }
-                    RandomAccessFile raf = new RandomAccessFile(filePath.toFile(), "rw");
-                    raf.seek(msg.getPartNumber() * Settings.MAX_FILE_PART_SIZE);
-                    raf.write(msg.getContent());
-                    raf.close();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            } else {
-                System.out.println("Saving file cancelled");
+            fileChooser.setInitialFileName(fileNameFromTable);
+            storedFile = fileChooser.showSaveDialog(StageHelper.getStage());
+            System.out.println("Файл для сохранения: " + storedFile);
+            if (fileNameFromTable != null) {
+                CmdMessage cmdMessage = new CmdMessage(CmdMessage.Command.DOWNLOAD_FILE_FROM_SERVER);
+                cmdMessage.setFileName(fileNameFromTable);
+                Network.sendMessage(cmdMessage);
+                System.out.println("Клиент запросил у сервера файл " + fileNameFromTable);
             }
         });
 
+    }
 
-
+    private void savePartFile(FilePartMessage msg) {    //сохраняет часть файла, пришедшую с сервера
+        System.out.println("Метод savePartFile вызван");
+        if (msg.getFileName() == null || msg.getContent() == null)
+            return;
+        if (storedFile != null) {
+            Path filePath = storedFile.toPath();
+            try {
+                if (!Files.exists(filePath)) {
+                    Files.createFile(filePath);
+                }
+                RandomAccessFile raf = new RandomAccessFile(filePath.toFile(), "rw");
+                raf.seek(msg.getPartNumber() * Settings.MAX_FILE_PART_SIZE);
+                raf.write(msg.getContent());
+                raf.close();
+                System.out.println("Часть файла записана");
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        } else {
+            System.out.println("Saving file cancelled");
+        }
     }
 
     public void deleteFile() {    //запрашивает удаление файла у сервера
@@ -240,7 +236,7 @@ public class MainController implements Initializable {
         }
     }
 
-    public void enterNewFileName() {    //запрашивает новое имя файла у пользователя
+    public void enterNewFileName() {    //запрашивает новое имя файла у пользователя при переименовании файла
         TextInputDialog dialog = new TextInputDialog(fileNameFromTable);
         dialog.setTitle("Rename the file");
         dialog.setHeaderText("Renaming the file " + fileNameFromTable);

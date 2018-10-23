@@ -26,7 +26,6 @@ public class CommandHandler {
                         System.out.println("File sent");
                     }
                     break;
-
                 case DELETE_FILE:
                     String fileToDelete = msg.getFileName();
                     if (fileToDelete != null) {
@@ -34,7 +33,6 @@ public class CommandHandler {
                         sendFileList(ctx, clientDirectory);
                     }
                     break;
-
                 case RENAME_FILE:
                     String oldFileName = msg.getFileName();
                     String newFileName = msg.getNewFileName();
@@ -43,11 +41,9 @@ public class CommandHandler {
                         sendFileList(ctx,clientDirectory);
                     }
                     break;
-
                 case REFRESH_FILE_LIST:
                     sendFileList(ctx, clientDirectory);
                     break;
-
                 case CLIENT_EXIT:
                     ctx.close();
                     break;
