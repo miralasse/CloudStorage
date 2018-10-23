@@ -96,7 +96,11 @@ public class MainController implements Initializable {
                         if (msg instanceof FileListMessage) {
                             updateFileList((FileListMessage) msg);
                         } else if (msg instanceof FilePartMessage) {
-                            savePartFile((FilePartMessage) msg);
+                            boolean lastPart = savePartFile((FilePartMessage) msg);
+                            if (lastPart) {
+                                storedFile = null;    //сброс файла для нового сохранения
+                                System.out.println("File has been received");
+                            }
                         } else if (msg instanceof CmdMessage) {
                             if (((CmdMessage) msg).getCommand() == CmdMessage.Command.SERVER_EXIT) {
                                 break;
@@ -181,10 +185,13 @@ public class MainController implements Initializable {
         Platform.runLater(() -> {
             FileChooser fileChooser = new FileChooser();
             fileChooser.setTitle("Save file");
+            fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("All Files (*.*)", "*"));
+//            String fileName = fileNameFromTable.substring(0, fileNameFromTable.lastIndexOf("."));
+//            String fileExtension = fileNameFromTable.substring(fileNameFromTable.lastIndexOf(".") + 1);
             fileChooser.setInitialFileName(fileNameFromTable);
             storedFile = fileChooser.showSaveDialog(StageHelper.getStage());
             System.out.println("Файл для сохранения: " + storedFile);
-            if (fileNameFromTable != null) {
+            if (storedFile != null) {
                 CmdMessage cmdMessage = new CmdMessage(CmdMessage.Command.DOWNLOAD_FILE_FROM_SERVER);
                 cmdMessage.setFileName(fileNameFromTable);
                 Network.sendMessage(cmdMessage);
@@ -194,10 +201,10 @@ public class MainController implements Initializable {
 
     }
 
-    private void savePartFile(FilePartMessage msg) {    //сохраняет часть файла, пришедшую с сервера
+    private boolean savePartFile(FilePartMessage msg) {    //сохраняет часть файла, пришедшую с сервера
         System.out.println("Метод savePartFile вызван");
         if (msg.getFileName() == null || msg.getContent() == null)
-            return;
+            return false;
         if (storedFile != null) {
             Path filePath = storedFile.toPath();
             try {
@@ -209,12 +216,14 @@ public class MainController implements Initializable {
                 raf.write(msg.getContent());
                 raf.close();
                 System.out.println("Часть файла записана");
+                return (msg.getPartNumber() == msg.getNumOfParts() - 1);
             } catch (IOException e) {
                 e.printStackTrace();
             }
         } else {
             System.out.println("Saving file cancelled");
         }
+        return false;
     }
 
     public void deleteFile() {    //запрашивает удаление файла у сервера
