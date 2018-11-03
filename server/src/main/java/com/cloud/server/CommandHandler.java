@@ -112,15 +112,18 @@ public class CommandHandler {
                 filePartMsg.setPartNumber(i);
                 filePartMsg.setNumOfParts(numOfParts);
                 filePartMsg.setPartSize(bytesRead);
-                filePartMsg.setContent(Arrays.copyOf(contentPart, bytesRead));
-
+                if (bytesRead == Settings.MAX_FILE_PART_SIZE) {
+                    filePartMsg.setContent(contentPart);
+                } else {
+                    filePartMsg.setContent(Arrays.copyOf(contentPart, bytesRead));
+                }
                 System.out.println(filePartMsg.getFileName() + " : "
                         + filePartMsg.getNumOfParts() + " частей "
                         + filePartMsg.getPartNumber() + " - номер части "
                         + filePartMsg.getPartSize() + " байт размером");
 
                 ctx.writeAndFlush(filePartMsg);
-                Arrays.fill(contentPart, (byte) 0);
+                //Arrays.fill(contentPart, (byte) 0);
             }
         } catch (IOException e) {
             e.printStackTrace();

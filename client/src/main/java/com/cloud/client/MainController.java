@@ -2,6 +2,7 @@ package com.cloud.client;
 
 import com.cloud.common.*;
 import javafx.application.Platform;
+import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.EventHandler;
@@ -21,6 +22,9 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.net.URL;
 import java.nio.file.*;
+import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
+import java.text.NumberFormat;
 import java.util.*;
 
 public class MainController implements Initializable {
@@ -42,7 +46,10 @@ public class MainController implements Initializable {
         tcFileName.setCellValueFactory(new PropertyValueFactory<>("fileName"));
 
         TableColumn<FileInfo, String> tcFileSize = new TableColumn<>("Size");
-        tcFileSize.setCellValueFactory(new PropertyValueFactory<>("fileSize"));
+        tcFileSize.setCellValueFactory(param -> {
+            long size = param.getValue().getFileSize();
+            return new ReadOnlyObjectWrapper(String.format("%,d", size) + " bytes");
+        });
 
         tableView.getColumns().addAll(tcFileName, tcFileSize);
         tableView.setItems(fileList);
@@ -165,15 +172,18 @@ public class MainController implements Initializable {
                     filePartMsg.setPartNumber(i);
                     filePartMsg.setNumOfParts(numOfParts);
                     filePartMsg.setPartSize(bytesRead);
-                    filePartMsg.setContent(Arrays.copyOf(contentPart, bytesRead));
-
+                    if (bytesRead == Settings.MAX_FILE_PART_SIZE) {
+                        filePartMsg.setContent(contentPart);
+                    } else {
+                        filePartMsg.setContent(Arrays.copyOf(contentPart, bytesRead));
+                    }
                     System.out.println(filePartMsg.getFileName() + " : "
                             + filePartMsg.getNumOfParts() + " частей "
                             + filePartMsg.getPartNumber() + " - номер части "
                             + filePartMsg.getPartSize() + " байт размером");
 
                     Network.sendMessage(filePartMsg);
-                    Arrays.fill(contentPart, (byte) 0);
+                    //Arrays.fill(contentPart, (byte) 0);
                 }
             } catch (IOException e) {
                 e.printStackTrace();
@@ -186,8 +196,6 @@ public class MainController implements Initializable {
             FileChooser fileChooser = new FileChooser();
             fileChooser.setTitle("Save file");
             fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("All Files (*.*)", "*"));
-//            String fileName = fileNameFromTable.substring(0, fileNameFromTable.lastIndexOf("."));
-//            String fileExtension = fileNameFromTable.substring(fileNameFromTable.lastIndexOf(".") + 1);
             fileChooser.setInitialFileName(fileNameFromTable);
             storedFile = fileChooser.showSaveDialog(StageHelper.getStage());
             System.out.println("Файл для сохранения: " + storedFile);
